@@ -1,0 +1,6 @@
+edge-tts>=7.2.0
+httpx>=0.27.0
+imageio-ffmpeg>=0.5.1
+moviepy>=2.1.2
+pillow>=10.4.0
+python-dotenv>=1.0.1

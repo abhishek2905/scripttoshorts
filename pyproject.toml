@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "script-to-shorts"
+version = "0.1.0"
+description = "Turn a script into a vertical AI short"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "edge-tts>=7.2.0",
+  "httpx>=0.27.0",
+  "imageio-ffmpeg>=0.5.1",
+  "moviepy>=2.1.2",
+  "pillow>=10.4.0",
+  "python-dotenv>=1.0.1",
+]
+
+[project.scripts]
+script-to-shorts = "script_to_shorts.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
