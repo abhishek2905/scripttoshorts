@@ -17,8 +17,23 @@ dependencies = [
   "python-dotenv>=1.0.1",
 ]
 
+[project.optional-dependencies]
+local = [
+  "accelerate>=0.34.0",
+  "diffusers>=0.31.0",
+  "huggingface-hub>=0.25.0",
+  "piper-tts>=1.2.0",
+  "safetensors>=0.4.0",
+  "torch>=2.4.0",
+  "transformers>=4.44.0",
+]
+
 [project.scripts]
 script-to-shorts = "script_to_shorts.cli:main"
+script-to-shorts-web = "script_to_shorts.webapp:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+script_to_shorts = ["static/*.html"]

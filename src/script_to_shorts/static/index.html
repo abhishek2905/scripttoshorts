@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111210">
+  <title>Script to Shorts Studio</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111210;
+      --panel: #191a17;
+      --panel-soft: #20211d;
+      --line: #343630;
+      --muted: #a2a394;
+      --text: #f4f3e9;
+      --lime: #d7f36b;
+      --orange: #ff9e5a;
+      --danger: #ff927f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 80% -10%, #394124 0, transparent 35%), var(--bg);
+      color: var(--text);
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .shell { width: min(1100px, calc(100% - 40px)); margin: 0 auto; padding: 26px 0 56px; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 56px; }
+    .brand { display: flex; gap: 11px; align-items: center; font-weight: 680; letter-spacing: -.03em; }
+    .mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--lime); color: #15170e; font-size: 18px; }
+    .local-pill { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 99px; padding: 7px 11px; color: var(--muted); font-size: 12px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 12px #d7f36b88; }
+    .hero { max-width: 690px; margin: 0 auto 35px; text-align: center; }
+    .eyebrow { color: var(--lime); text-transform: uppercase; letter-spacing: .16em; font-size: 11px; font-weight: 700; }
+    h1 { font-size: clamp(34px, 5vw, 56px); line-height: 1.03; letter-spacing: -.055em; margin: 15px 0; }
+    .hero p { color: var(--muted); margin: 0; font-size: 16px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(310px, .9fr); gap: 18px; align-items: start; }
+    .card { background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line); border-radius: 18px; padding: 22px; box-shadow: 0 18px 60px #0002; }
+    .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 5px; margin-bottom: 22px; border-radius: 13px; background: #11120f; border: 1px solid var(--line); }
+    .mode-button { border: 0; border-radius: 9px; background: transparent; color: var(--muted); padding: 11px 10px; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+    .mode-button.active { color: #191b13; background: var(--lime); }
+    .mode-button span { margin-right: 7px; }
+    label { display: block; margin: 17px 0 7px; color: #deded2; font-size: 13px; font-weight: 620; }
+    .label-row { display: flex; justify-content: space-between; align-items: baseline; }
+    .hint { color: var(--muted); font-size: 11px; font-weight: 400; }
+    textarea, select, input[type="number"] { width: 100%; color: var(--text); background: #12130f; border: 1px solid var(--line); border-radius: 11px; padding: 12px 13px; outline: none; font: inherit; }
+    textarea { min-height: 190px; resize: vertical; line-height: 1.55; }
+    textarea:focus, select:focus, input:focus { border-color: #9cae4c; box-shadow: 0 0 0 3px #d7f36b12; }
+    .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .settings { margin-top: 8px; padding-top: 2px; }
+    .model-note { color: var(--muted); font-size: 11px; margin: 9px 2px 0; }
+    .model-note strong { color: var(--orange); font-weight: 600; }
+    .hidden { display: none !important; }
+    .primary { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 11px; background: var(--lime); color: #17190f; font: inherit; font-weight: 750; cursor: pointer; transition: transform .15s, opacity .15s; }
+    .primary:hover { transform: translateY(-1px); }
+    .primary:disabled { cursor: wait; opacity: .65; transform: none; }
+    .side-card { min-height: 420px; display: flex; flex-direction: column; }
+    .side-head { display: flex; justify-content: space-between; align-items: center; }
+    h2 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+    .tag { padding: 4px 8px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: 10px; }
+    .preview { flex: 1; min-height: 280px; display: grid; place-items: center; margin-top: 18px; border: 1px dashed #3b3d35; border-radius: 14px; background: radial-gradient(ellipse at 50% 65%, #292c20 0, #171814 60%); overflow: hidden; }
+    .empty { max-width: 210px; padding: 20px; text-align: center; color: var(--muted); }
+    .empty-icon { display: grid; place-items: center; width: 49px; height: 49px; margin: 0 auto 13px; border: 1px solid #555b39; border-radius: 15px; color: var(--lime); font-size: 22px; }
+    .empty b { color: #e9e9dc; display: block; margin-bottom: 5px; font-size: 13px; }
+    .empty p { font-size: 12px; margin: 0; }
+    .status { width: 100%; padding: 22px; text-align: center; color: var(--muted); }
+    .spinner { width: 25px; height: 25px; margin: 0 auto 12px; border: 2px solid #414336; border-top-color: var(--lime); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-track { width: min(260px, 90%); height: 6px; margin: 15px auto 8px; border-radius: 99px; background: #383a31; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: inherit; background: var(--lime); transition: width .35s ease; }
+    .progress-caption { color: #858678; font-size: 11px; }
+    .result { width: 100%; padding: 13px; }
+    video, audio { display: block; width: 100%; max-height: 430px; border-radius: 10px; background: #090a08; }
+    .download { display: inline-flex; margin-top: 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--lime); text-decoration: none; font-size: 12px; }
+    .error { padding: 16px; color: var(--danger); font-size: 13px; text-align: center; overflow-wrap: anywhere; }
+    .footer-note { max-width: 700px; margin: 19px auto 0; color: #858678; font-size: 11px; text-align: center; }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 24px, 540px); padding-top: 16px; }
+      header { margin-bottom: 38px; }
+      .workspace { grid-template-columns: 1fr; }
+      .side-card { min-height: 350px; }
+      .preview { min-height: 240px; }
+      .card { padding: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><div class="mark">✳</div> Script to Shorts</div>
+      <div class="local-pill"><i class="dot"></i> Running on this Mac</div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Local creation studio</div>
+      <h1>Turn a prompt into<br>something you can hear or see.</h1>
+      <p>Generate a short video with Wan, or turn your words into spoken audio.</p>
+    </section>
+
+    <section class="workspace">
+      <form class="card" id="generate-form">
+        <div class="mode-switch" role="tablist" aria-label="Generation type">
+          <button class="mode-button active" type="button" data-mode="video"><span>▧</span>Text to video</button>
+          <button class="mode-button" type="button" data-mode="audio"><span>♫</span>Text to audio</button>
+        </div>
+
+        <label for="prompt"><span id="prompt-title">Describe your video</span></label>
+        <textarea id="prompt" maxlength="8000" required placeholder="A quiet street-food stall in Patna at blue hour. A vendor roasts litti over glowing charcoal while a young man approaches..." autocomplete="off"></textarea>
+        <div class="label-row"><span class="hint" id="prompt-hint">Describe one shot, the subject, action, setting, and camera movement.</span><span class="hint" id="counter">0 / 8000</span></div>
+
+        <div class="settings" id="video-settings">
+          <div class="grid-two">
+            <div>
+              <label for="model">Wan model</label>
+              <select id="model">
+                <option value="t2v-1.3B" selected>Wan 2.1 · 1.3B (recommended)</option>
+                <option value="t2v-14B">Wan 2.1 · 14B</option>
+              </select>
+            </div>
+            <div>
+              <label for="seconds">Clip length</label>
+              <select id="seconds">
+                <option value="5" selected>5 seconds</option>
+                <option value="8">8 seconds</option>
+                <option value="10">10 seconds</option>
+                <option value="15">15 seconds</option>
+                <option value="20">20 seconds</option>
+              </select>
+            </div>
+          </div>
+          <div id="quantize-wrap" class="hidden">
+            <label for="quantize">Memory reduction</label>
+            <select id="quantize">
+              <option value="8" selected>8-bit quantization</option>
+              <option value="4">4-bit quantization</option>
+            </select>
+            <p class="model-note"><strong>14B needs substantial memory.</strong> Quantization lowers use, but this model may still exceed 24 GB.</p>
+          </div>
+          <p class="model-note">First video generation downloads model weights. Generation can take several minutes.</p>
+        </div>
+
+        <div class="settings hidden" id="audio-settings">
+          <div class="grid-two">
+            <div>
+              <label for="provider">Speech engine</label>
+              <select id="provider">
+                <option value="local" selected>Local Piper</option>
+                <option value="edge">Edge TTS (online)</option>
+              </select>
+            </div>
+            <div>
+              <label for="voice">Voice</label>
+              <select id="voice"></select>
+            </div>
+          </div>
+          <p class="model-note" id="audio-note">Local Piper downloads its voice model the first time you generate audio.</p>
+        </div>
+
+        <button class="primary" id="submit" type="submit"><span id="button-icon">✦</span><span id="button-label">Generate video</span></button>
+      </form>
+
+      <aside class="card side-card">
+        <div class="side-head"><h2>Your result</h2><span class="tag" id="result-tag">PREVIEW</span></div>
+        <div class="preview" id="preview">
+          <div class="empty">
+            <div class="empty-icon">✧</div>
+            <b>Your creation will appear here</b>
+            <p>Write a prompt and choose a mode to get started.</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+    <p class="footer-note">Runs locally at 127.0.0.1. Video and audio files are saved in the project’s output/web folder.</p>
+  </main>
+
+  <script>
+    const buttons = [...document.querySelectorAll('.mode-button')];
+    const promptBox = document.querySelector('#prompt');
+    const counter = document.querySelector('#counter');
+    const videoSettings = document.querySelector('#video-settings');
+    const audioSettings = document.querySelector('#audio-settings');
+    const modelSelect = document.querySelector('#model');
+    const quantizeWrap = document.querySelector('#quantize-wrap');
+    const providerSelect = document.querySelector('#provider');
+    const voiceSelect = document.querySelector('#voice');
+    const preview = document.querySelector('#preview');
+    const submit = document.querySelector('#submit');
+    let mode = 'video';
+
+    function updateVoices() {
+      const local = providerSelect.value === 'local';
+      voiceSelect.innerHTML = local
+        ? '<option value="en_US-lessac-medium">US English · Lessac</option>'
+        : '<option value="en-US-JennyNeural">US English · Jenny</option><option value="en-IN-NeerjaNeural">Indian English · Neerja</option>';
+      document.querySelector('#audio-note').textContent = local
+        ? 'Local Piper downloads its voice model the first time you generate audio.'
+        : 'Edge TTS uses an internet connection to synthesize speech.';
+    }
+
+    buttons.forEach(button => button.addEventListener('click', () => {
+      mode = button.dataset.mode;
+      buttons.forEach(item => item.classList.toggle('active', item === button));
+      videoSettings.classList.toggle('hidden', mode !== 'video');
+      audioSettings.classList.toggle('hidden', mode !== 'audio');
+      document.querySelector('#prompt-title').textContent = mode === 'video' ? 'Describe your video' : 'Enter the words to speak';
+      document.querySelector('#prompt-hint').textContent = mode === 'video'
+        ? 'Describe one shot, the subject, action, setting, and camera movement.'
+        : 'The selected voice will read this text aloud.';
+      promptBox.placeholder = mode === 'video'
+        ? 'A quiet street-food stall in Patna at blue hour. A vendor roasts litti over glowing charcoal while a young man approaches...'
+        : 'The evening breeze moves through the city as the street-food stalls begin to glow.';
+      document.querySelector('#button-label').textContent = mode === 'video' ? 'Generate video' : 'Generate audio';
+      document.querySelector('#button-icon').textContent = mode === 'video' ? '✦' : '♫';
+    }));
+
+    promptBox.addEventListener('input', () => { counter.textContent = `${promptBox.value.length} / 8000`; });
+    modelSelect.addEventListener('change', () => quantizeWrap.classList.toggle('hidden', modelSelect.value !== 't2v-14B'));
+    providerSelect.addEventListener('change', updateVoices);
+    updateVoices();
+
+    function showStatus(message, percent = null) {
+      const progress = percent === null ? '' : `<div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div><div class="progress-caption">${percent}%</div>`;
+      preview.innerHTML = `<div class="status"><div class="spinner"></div>${escapeHtml(message)}${progress}</div>`;
+    }
+
+    function showError(message) {
+      preview.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+      submit.disabled = false;
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+
+    async function watchJob(id) {
+      const response = await fetch(`/api/status/${id}`);
+      const job = await response.json();
+      if (job.status === 'queued') {
+        showStatus('Waiting for the local generator…');
+      } else if (job.status === 'running') {
+        const message = job.message || (job.kind === 'audio' ? 'Creating your speech audio…' : 'Generating frames with Wan…');
+        showStatus(message, Number.isInteger(job.progress) ? job.progress : null);
+      } else if (job.status === 'error') {
+        showError(job.error || 'Generation failed.');
+        return;
+      } else if (job.status === 'done') {
+        const media = job.kind === 'video'
+          ? `<video src="${job.url}" controls playsinline></video>`
+          : `<audio src="${job.url}" controls></audio>`;
+        preview.innerHTML = `<div class="result">${media}<a class="download" href="${job.url}" download="${escapeHtml(job.filename)}">Download file ↗</a></div>`;
+        document.querySelector('#result-tag').textContent = job.kind === 'video' ? 'VIDEO READY' : 'AUDIO READY';
+        submit.disabled = false;
+        return;
+      }
+      window.setTimeout(() => watchJob(id).catch(error => showError(error.message)), 1800);
+    }
+
+    document.querySelector('#generate-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const prompt = promptBox.value.trim();
+      if (!prompt) return;
+      submit.disabled = true;
+      showStatus(mode === 'video' ? 'Starting Wan video generation…' : 'Starting speech generation…');
+      document.querySelector('#result-tag').textContent = 'WORKING';
+      const payload = { mode, prompt };
+      if (mode === 'video') {
+        payload.model = modelSelect.value;
+        payload.seconds = Number(document.querySelector('#seconds').value);
+        if (modelSelect.value === 't2v-14B') payload.quantize = Number(document.querySelector('#quantize').value);
+      } else {
+        payload.provider = providerSelect.value;
+        payload.voice = voiceSelect.value;
+      }
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not start generation.');
+        await watchJob(result.id);
+      } catch (error) {
+        showError(error.message);
+        document.querySelector('#result-tag').textContent = 'ERROR';
+      }
+    });
+  </script>
+</body>
+</html>

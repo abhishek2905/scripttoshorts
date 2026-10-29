@@ -9,10 +9,20 @@ from PIL import Image, ImageDraw, ImageFont
 
 from script_to_shorts.config import SETTINGS
 
+_local_pipe = None
 
-def scene_image(prompt: str, dest: Path, use_ai: bool = True) -> Path:
+
+def scene_image(prompt: str, dest: Path, provider: str = "pollinations") -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if use_ai:
+    if provider == "local":
+        try:
+            _generate_local(prompt, dest)
+            return dest
+        except Exception as exc:
+            print(f"  local image failed ({exc}); using text card")
+            _fallback_card(prompt, dest)
+            return dest
+    if provider != "none":
         try:
             _download_pollinations(prompt, dest)
             return dest
@@ -20,6 +30,59 @@ def scene_image(prompt: str, dest: Path, use_ai: bool = True) -> Path:
             pass
     _fallback_card(prompt, dest)
     return dest
+
+
+def _torch_device():
+    import torch
+
+    if torch.backends.mps.is_available():
+        return "mps", torch.float16
+    if torch.cuda.is_available():
+        return "cuda", torch.float16
+    return "cpu", torch.float32
+
+
+def _local_pipeline():
+    global _local_pipe
+    if _local_pipe is not None:
+        return _local_pipe
+    try:
+        import torch
+        from diffusers import AutoPipelineForText2Image
+    except ImportError as exc:
+        raise SystemExit(
+            "Local images need torch + diffusers. Install with: pip install -e '.[local]'"
+        ) from exc
+
+    device, dtype = _torch_device()
+    print(f"  loading {SETTINGS.image_model} on {device}...")
+    pipe = AutoPipelineForText2Image.from_pretrained(
+        SETTINGS.image_model,
+        torch_dtype=dtype,
+        variant="fp16" if dtype == torch.float16 else None,
+    )
+    pipe.to(device)
+    _local_pipe = pipe
+    return pipe
+
+
+def _generate_local(prompt: str, dest: Path) -> None:
+    pipe = _local_pipeline()
+    full = (
+        f"{prompt}, vertical 9:16, cinematic lighting, photoreal, "
+        f"no text, no watermark, ultra detailed"
+    )
+    width = 768
+    height = 1344
+    image = pipe(
+        prompt=full,
+        num_inference_steps=4,
+        guidance_scale=0.0,
+        width=width,
+        height=height,
+    ).images[0]
+    image = image.resize((SETTINGS.width, SETTINGS.height), Image.Resampling.LANCZOS)
+    image.save(dest, format="JPEG", quality=92)
 
 
 def _download_pollinations(prompt: str, dest: Path) -> None:
