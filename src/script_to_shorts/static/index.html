@@ -45,13 +45,16 @@
     label { display: block; margin: 17px 0 7px; color: #deded2; font-size: 13px; font-weight: 620; }
     .label-row { display: flex; justify-content: space-between; align-items: baseline; }
     .hint { color: var(--muted); font-size: 11px; font-weight: 400; }
-    textarea, select, input[type="number"] { width: 100%; color: var(--text); background: #12130f; border: 1px solid var(--line); border-radius: 11px; padding: 12px 13px; outline: none; font: inherit; }
+    textarea, select, input[type="number"], input[type="password"] { width: 100%; color: var(--text); background: #12130f; border: 1px solid var(--line); border-radius: 11px; padding: 12px 13px; outline: none; font: inherit; }
     textarea { min-height: 190px; resize: vertical; line-height: 1.55; }
     textarea:focus, select:focus, input:focus { border-color: #9cae4c; box-shadow: 0 0 0 3px #d7f36b12; }
     .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .settings { margin-top: 8px; padding-top: 2px; }
     .model-note { color: var(--muted); font-size: 11px; margin: 9px 2px 0; }
     .model-note strong { color: var(--orange); font-weight: 600; }
+    .hf-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+    .secondary { border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; color: var(--lime); background: #20211d; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+    .secondary:disabled { opacity: .6; cursor: wait; }
     .hidden { display: none !important; }
     .primary { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 11px; background: var(--lime); color: #17190f; font: inherit; font-weight: 750; cursor: pointer; transition: transform .15s, opacity .15s; }
     .primary:hover { transform: translateY(-1px); }
@@ -96,7 +99,7 @@
     <section class="hero">
       <div class="eyebrow">Local creation studio</div>
       <h1>Turn a prompt into<br>something you can hear or see.</h1>
-      <p>Generate a short video with Wan, or turn your words into spoken audio.</p>
+      <p>Generate a fast local video clip, or turn your words into spoken audio.</p>
     </section>
 
     <section class="workspace">
@@ -113,9 +116,12 @@
         <div class="settings" id="video-settings">
           <div class="grid-two">
             <div>
-              <label for="model">Wan model</label>
+              <label for="model">Video model</label>
               <select id="model">
-                <option value="t2v-1.3B" selected>Wan 2.1 · 1.3B (recommended)</option>
+                <option value="fastmetal-1.3B-QAD" selected>FastMetal · 1.3B (fastest)</option>
+                <option value="fastmetal-5B-QAD">FastMetal · 5B (better detail · slower)</option>
+                <option value="fastmetal-14B-QAD">FastMetal · 14B (highest quality · 36GB+)</option>
+                <option value="t2v-1.3B">Wan 2.1 · 1.3B</option>
                 <option value="t2v-14B">Wan 2.1 · 14B</option>
               </select>
             </div>
@@ -138,7 +144,15 @@
             </select>
             <p class="model-note"><strong>14B needs substantial memory.</strong> Quantization lowers use, but this model may still exceed 24 GB.</p>
           </div>
-          <p class="model-note">First video generation downloads model weights. Generation can take several minutes.</p>
+          <p class="model-note" id="video-note">FastMetal uses a 3-step MLX checkpoint. First generation downloads model weights; fast frame interpolation is enabled.</p>
+          <div class="settings" id="hf-auth">
+            <label for="hf-token">Hugging Face token <span class="hint">optional · local downloads</span></label>
+            <div class="hf-row">
+              <input id="hf-token" type="password" autocomplete="off" placeholder="hf_…" spellcheck="false">
+              <button class="secondary" id="save-hf-token" type="button">Save locally</button>
+            </div>
+            <p class="model-note" id="hf-token-note">A token can help with authenticated model downloads. It does not speed up video generation. Saved in your local Hugging Face credentials, never in the project.</p>
+          </div>
         </div>
 
         <div class="settings hidden" id="audio-settings">
@@ -182,6 +196,7 @@
     const videoSettings = document.querySelector('#video-settings');
     const audioSettings = document.querySelector('#audio-settings');
     const modelSelect = document.querySelector('#model');
+    const secondsSelect = document.querySelector('#seconds');
     const quantizeWrap = document.querySelector('#quantize-wrap');
     const providerSelect = document.querySelector('#provider');
     const voiceSelect = document.querySelector('#voice');
@@ -192,11 +207,11 @@
     function updateVoices() {
       const local = providerSelect.value === 'local';
       voiceSelect.innerHTML = local
-        ? '<option value="en_US-lessac-medium">US English · Lessac</option>'
-        : '<option value="en-US-JennyNeural">US English · Jenny</option><option value="en-IN-NeerjaNeural">Indian English · Neerja</option>';
+        ? '<optgroup label="Hindi · local Piper"><option value="hi_IN-pratham-medium">Hindi · Pratham (male)</option><option value="hi_IN-priyamvada-medium">Hindi · Priyamvada (female)</option></optgroup><optgroup label="Other"><option value="en_US-lessac-medium" selected>US English · Lessac</option></optgroup>'
+        : '<optgroup label="Hindi · online Edge TTS"><option value="hi-IN-SwaraNeural">Hindi · Swara (female)</option><option value="hi-IN-MadhurNeural">Hindi · Madhur (male)</option></optgroup><optgroup label="Indian English · online Edge TTS"><option value="en-IN-NeerjaNeural">Neerja (female)</option><option value="en-IN-NeerjaExpressiveNeural">Neerja Expressive (female)</option><option value="en-IN-PrabhatNeural">Prabhat (male)</option></optgroup><optgroup label="Other"><option value="en-US-JennyNeural">US English · Jenny</option></optgroup>';
       document.querySelector('#audio-note').textContent = local
-        ? 'Local Piper downloads its voice model the first time you generate audio.'
-        : 'Edge TTS uses an internet connection to synthesize speech.';
+        ? 'Piper runs locally. Hindi voice files download from Hugging Face the first time you use them.'
+        : 'Edge TTS uses an internet connection and includes more Indian English and Hindi voices.';
     }
 
     buttons.forEach(button => button.addEventListener('click', () => {
@@ -216,9 +231,45 @@
     }));
 
     promptBox.addEventListener('input', () => { counter.textContent = `${promptBox.value.length} / 8000`; });
-    modelSelect.addEventListener('change', () => quantizeWrap.classList.toggle('hidden', modelSelect.value !== 't2v-14B'));
+    modelSelect.addEventListener('change', () => {
+      quantizeWrap.classList.toggle('hidden', modelSelect.value !== 't2v-14B');
+      const fastmetal5b = modelSelect.value === 'fastmetal-5B-QAD';
+      [...secondsSelect.options].forEach(option => { option.disabled = fastmetal5b && Number(option.value) > 5; });
+      if (fastmetal5b) secondsSelect.value = '5';
+      const notes = {
+        'fastmetal-1.3B-QAD': 'FastMetal 1.3B is the quickest option. First generation downloads weights; temporal interpolation is enabled.',
+        'fastmetal-5B-QAD': 'FastMetal 5B is the higher-detail Wan 2.2 model. This app uses FastVideo’s validated 480p shape and limits clips to 5 seconds to avoid Metal memory errors.',
+        'fastmetal-14B-QAD': 'FastMetal 14B is the highest-capacity option. It can use over 20GB just for MLX allocations; 36GB+ unified memory is recommended.',
+        't2v-1.3B': 'Wan 2.1 1.3B uses more denoising steps and can take much longer than FastMetal. First generation downloads weights.',
+        't2v-14B': 'Wan 2.1 14B is very slow and memory intensive; it may exceed 24GB even when quantized.'
+      };
+      document.querySelector('#video-note').textContent = notes[modelSelect.value];
+    });
     providerSelect.addEventListener('change', updateVoices);
     updateVoices();
+
+    const hfTokenInput = document.querySelector('#hf-token');
+    const hfTokenNote = document.querySelector('#hf-token-note');
+    const hfSaveButton = document.querySelector('#save-hf-token');
+    fetch('/api/settings/hf-token').then(response => response.json()).then(result => {
+      if (result.configured) hfTokenNote.textContent = 'A Hugging Face token is already configured in your local credentials.';
+    }).catch(() => {});
+    hfSaveButton.addEventListener('click', async () => {
+      const token = hfTokenInput.value.trim();
+      if (!token) { hfTokenNote.textContent = 'Paste a token first.'; return; }
+      hfSaveButton.disabled = true;
+      hfTokenNote.textContent = 'Saving to local Hugging Face credentials…';
+      try {
+        const response = await fetch('/api/settings/hf-token', {
+          method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save token.');
+        hfTokenInput.value = '';
+        hfTokenNote.textContent = 'Token saved in local Hugging Face credentials. It is not stored in the project.';
+      } catch (error) { hfTokenNote.textContent = error.message; }
+      finally { hfSaveButton.disabled = false; }
+    });
 
     function showStatus(message, percent = null) {
       const progress = percent === null ? '' : `<div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div><div class="progress-caption">${percent}%</div>`;
@@ -240,7 +291,7 @@
       if (job.status === 'queued') {
         showStatus('Waiting for the local generator…');
       } else if (job.status === 'running') {
-        const message = job.message || (job.kind === 'audio' ? 'Creating your speech audio…' : 'Generating frames with Wan…');
+        const message = job.message || (job.kind === 'audio' ? 'Creating your speech audio…' : 'Generating video…');
         showStatus(message, Number.isInteger(job.progress) ? job.progress : null);
       } else if (job.status === 'error') {
         showError(job.error || 'Generation failed.');
@@ -262,7 +313,7 @@
       const prompt = promptBox.value.trim();
       if (!prompt) return;
       submit.disabled = true;
-      showStatus(mode === 'video' ? 'Starting Wan video generation…' : 'Starting speech generation…');
+      showStatus(mode === 'video' ? 'Starting local video generation…' : 'Starting speech generation…');
       document.querySelector('#result-tag').textContent = 'WORKING';
       const payload = { mode, prompt };
       if (mode === 'video') {

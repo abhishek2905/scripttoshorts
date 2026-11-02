@@ -9,6 +9,8 @@ from script_to_shorts.config import SETTINGS
 PIPER_REPO = "rhasspy/piper-voices"
 PIPER_VOICES = {
     "en_US-lessac-medium": "en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+    "hi_IN-pratham-medium": "hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx",
+    "hi_IN-priyamvada-medium": "hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx",
 }
 
 

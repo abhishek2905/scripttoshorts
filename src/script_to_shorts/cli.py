@@ -37,9 +37,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--mlx-model",
-        choices=("t2v-1.3B", "t2v-14B"),
+        choices=("fastmetal-1.3B-QAD", "fastmetal-5B-QAD", "fastmetal-14B-QAD", "t2v-1.3B", "t2v-14B"),
         default=SETTINGS.mlx_model,
-        help="Wan text-to-video model (default: t2v-1.3B)",
+        help="MLX text-to-video model (default: fastmetal-1.3B-QAD)",
     )
     parser.add_argument(
         "--mlx-quantize",

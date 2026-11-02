@@ -24,9 +24,14 @@ class Settings:
     work_dir: Path = Path(os.getenv("WORK_DIR", "output/work"))
     mlx_wan_dir: Path = Path(os.getenv("MLX_WAN_DIR", "../mlx-examples/video/wan2.1"))
     mlx_python: str = os.getenv("MLX_PYTHON", sys.executable)
-    mlx_model: str = os.getenv("MLX_MODEL", "t2v-1.3B")
+    mlx_model: str = os.getenv("MLX_MODEL", "fastmetal-1.3B-QAD")
     mlx_size: str = os.getenv("MLX_SIZE", "480x832")
     mlx_steps: int = int(os.getenv("MLX_STEPS", "30"))
+    fastvideo_dir: Path = Path(os.getenv("FASTVIDEO_DIR", "../FastVideo"))
+    fastvideo_python: str = os.getenv("FASTVIDEO_PYTHON", "../FastVideo/.venv/bin/python")
+    fastmetal_model_dir: str = os.getenv("FASTMETAL_MODEL_DIR", "")
+    fastmetal_5b_model_dir: str = os.getenv("FASTMETAL_5B_MODEL_DIR", "")
+    fastmetal_14b_model_dir: str = os.getenv("FASTMETAL_14B_MODEL_DIR", "")
 
 
 SETTINGS = Settings()

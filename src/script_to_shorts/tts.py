@@ -19,13 +19,27 @@ def speak(text: str, voice: str, dest: Path, provider: str = "edge") -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
     if provider == "local":
         return _speak_piper(text, voice, dest)
+    if voice not in EDGE_VOICES:
+        raise ValueError(f"Unsupported Edge TTS voice: {voice}")
     asyncio.run(_synthesize_edge(text, voice, dest))
     return dest
 
 
+EDGE_VOICES = {
+    "en-IN-NeerjaNeural", "en-IN-NeerjaExpressiveNeural", "en-IN-PrabhatNeural",
+    "hi-IN-SwaraNeural", "hi-IN-MadhurNeural",
+    "en-US-JennyNeural",
+}
+
+
 async def _synthesize_edge(text: str, voice: str, dest: Path) -> None:
     communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(str(dest))
+    try:
+        await communicate.save(str(dest))
+    except edge_tts.exceptions.NoAudioReceived as exc:
+        raise RuntimeError(
+            f"Edge TTS returned no audio for {voice}. Choose a listed voice or switch to Local Piper."
+        ) from exc
 
 
 def _speak_piper(text: str, voice: str, dest: Path) -> Path:
